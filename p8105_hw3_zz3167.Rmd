@@ -4,3 +4,115 @@ author: "Zhiyi Zhu"
 date: "2023-10-08"
 output: github_document
 ---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+## Problem 1
+
+```{r}
+library(p8105.datasets)
+data("instacart")
+```
+
+### Write a short description of the dataset
+
+* The dataset contains `r nrow(instacart)` observations of `r length(unique(instacart$order_id))` unique users with `r ncol(instacart)` variables, which form a total of `r nrow(instacart) * ncol(instacart)` data points.
+* The key variables of the dataset contain `r names(instacart)`.
+* <mark>Describe some key variables:
+
+```{r}
+skimr::skim(instacart)
+```
+
+* <mark>Give illstrative examples of observations:
+
+```{r}
+knitr::kable(head(instacart))
+```
+
+### How many aisles are there, and which aisles are the most items ordered from?
+
+```{r}
+aisles_num = 
+  select(instacart,aisle_id) |>
+  unique() |>
+  nrow()
+
+aisles_desc_order_df = 
+  instacart |>
+  group_by(aisle) |>
+  summarize(n_obs = n()) |>
+  arrange(desc(n_obs)) 
+  
+aisles_max =
+  aisles_desc_order_df |>
+  head(1) |>
+  pull(aisle)
+```
+
+There's total `r aisles_num` aisles, among which `r aisles_max` are the most items ordered from.
+
+### Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+
+```{r}
+aisles_desc_order_df |>
+  janitor::clean_names() |>
+  filter(n_obs > 10000) |>
+  ggplot(aes(x = reorder(aisle, n_obs), y = n_obs)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Number of Items Ordered at Each Aisle",
+    x = "Aisle",
+    y = "Number of items ordered",
+    caption = "Note: limited to aisles with more than 10000 items ordered"
+  )
+```
+
+### Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+
+```{r, warning = FALSE}
+instacart |>
+  janitor::clean_names() |>
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
+  group_by(aisle, product_name) |>
+  summarise(n_products = n()) |>
+  arrange(desc(n_products)) |>
+  ungroup() |> 
+  group_by(aisle) |>
+  slice_head(n = 3)|>
+  knitr::kable(caption = "Top 3 Most Popular Items in Selected Aisles", position = "top")
+```
+
+### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers 
+
+```{r}
+instacart |>
+  janitor::clean_names() |>
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
+  group_by(order_dow, product_name) |>
+  summarise(mean_hour_of_the_day = mean(order_hour_of_day)) |>
+  mutate(
+    order_dow = case_match(
+      order_dow,
+      0 ~ 'Sunday',
+      1 ~ 'Monday',
+      2 ~ 'Tuesday',
+      3 ~ 'Wednesday',
+      4 ~ 'Thursday',
+      5 ~ 'Friday',
+      6 ~ 'Saturday'
+    )) |>
+  pivot_wider(names_from = order_dow, values_from = mean_hour_of_the_day) |>
+  knitr::kable(caption = "Mean Hour of the Day for Pink Lady Apples and Coffee Ice Cream in One Week", position = "top")
+```
+
+
+
+
+
+
+
