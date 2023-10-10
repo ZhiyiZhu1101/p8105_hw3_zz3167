@@ -8,12 +8,13 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 ```
 
 
 ```{r}
 knitr::opts_chunk$set(
-  fig.width = 6,
+  fig.width = 10,
   fig.asp = .6,
   out.width = "90%",
   message = FALSE, 
@@ -22,6 +23,8 @@ knitr::opts_chunk$set(
 ```
 
 ## Problem 1
+
+### Load the data
 
 ```{r}
 library(p8105.datasets)
@@ -120,6 +123,98 @@ instacart |>
   pivot_wider(names_from = order_dow, values_from = mean_hour_of_the_day) |>
   knitr::kable(caption = "Mean Hour of the Day for Pink Lady Apples and Coffee Ice Cream in One Week", position = "top")
 ```
+
+### Problem 2
+
+### Load the data
+
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+```
+
+### Do some data cleaning
+
+```{r}
+brfss_new_df = 
+  brfss_smart2010 |>
+  janitor::clean_names() |>
+  rename(state = locationabbr, location = locationdesc) |>
+  filter(
+    topic == "Overall Health",
+    response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) |>
+  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), order = TRUE))
+```
+
+### Answer the following questions and comment on the results.
+
+#### In 2002, which states were observed at 7 or more locations? What about in 2010?
+
+```{r}
+states_2002 = 
+  brfss_new_df |>
+  filter(year == "2002") |>
+  group_by(state) |>
+  summarise(n_location = n_distinct(location)) |>
+  filter(n_location >= 7) |>
+  pull(state)
+
+states_2010 = 
+  brfss_new_df |>
+  filter(year == "2010") |>
+  group_by(state) |>
+  summarise(n_location = n_distinct(location)) |>
+  filter(n_location >= 7) |>
+  pull(state)
+```
+
+#### Comment on the results:
+
+In 2002, `r states_2002` were observed at 7 or more locations.
+
+In 2010, `r states_2010` were observed at 7 or more locations. 
+
+#### Construct a dataset that meets the criteria and make a plot.
+
+```{r}
+brfss_excellent = 
+  brfss_new_df |>
+  filter(response == "Excellent") |>
+  group_by(year, state) |>
+  summarise(mean_data_value = mean(data_value, na.rm = TRUE))
+
+brfss_excellent |>
+  ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
+  geom_line() +
+  labs(
+    title ="Excellent Responses Variation Across Different States",
+    x = "Year",
+    y = "Average Value") +
+  theme_bw()
+```
+
+#### Comment on the results:
+
+* From the spaghetti plot we can see that the mean value varies between `r min(brfss_excellent$mean_data_value)` and `r max(brfss_excellent$mean_data_value)`, and the average values for different states fluctuated around a particular value over time.
+
+#### Make a two-panel plot 
+
+```{r}
+brfss_new_df |>
+  filter(year %in% c(2006,2010),state == "NY") |>
+  ggplot(aes(x = response, y = data_value)) +
+  geom_boxplot(aes(fill = response)) +
+  facet_wrap(~ year) +
+  labs(title = "Distribution of Data Value by Response in NY State for 2006 and 2010",
+       x = "Response",
+       y = "Data Value")
+```
+
+#### Comment on the results:
+
+* Comparing the two boxplots, we can find that they have similar distribution. In 2006 and 2010, "very good" response corresponded to the highest average data value, and "poor" response corresponded to the lowest average data value.
+
+
 
 
 
