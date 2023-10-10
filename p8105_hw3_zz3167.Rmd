@@ -10,6 +10,17 @@ library(tidyverse)
 library(dplyr)
 ```
 
+
+```{r}
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%",
+  message = FALSE, 
+  warning = FALSE
+)
+```
+
 ## Problem 1
 
 ```{r}
@@ -74,7 +85,7 @@ aisles_desc_order_df |>
 
 ### Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
 
-```{r, warning = FALSE}
+```{r}
 instacart |>
   janitor::clean_names() |>
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
