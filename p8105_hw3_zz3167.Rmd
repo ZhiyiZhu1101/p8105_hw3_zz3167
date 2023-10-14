@@ -14,8 +14,9 @@ library(ggplot2)
 
 ```{r}
 knitr::opts_chunk$set(
-  fig.width = 10,
+  fig.width = 15,
   fig.asp = .6,
+  dpi = 200,
   out.width = "90%",
   message = FALSE, 
   warning = FALSE
@@ -98,7 +99,7 @@ instacart |>
 
 * In the "Packaged Vegetables Fruits" aisle, "Organic Baby Spinach" is the most popular product with a count of 9784. "Organic Raspberries" and "Organic Blueberries" are the 2nd and 3rd most popular in the same aisle, with counts of 5546 and 4966 respectively.
 * In the "Baking Ingredients" aisle, "Light Brown Sugar" is the top product with a count of 499. "Pure Baking Soda" and "Cane Sugar" are the 2nd and 3rd most popular baking ingredients, with counts of 387 and 336 respectively.
-* In the "Dog Food Care" aisle, 'Snack Sticks Chicken & Rice Recipe Dog Treats' is the most popular with a count of 30. 'Organix Chicken & Brown Rice Recipe' and 'Small Dog Biscuits' are the 2nd and 3rd most popular dog food care products, with counts of 28 and 26 respectively.
+* In the "Dog Food Care" aisle, "Snack Sticks Chicken & Rice Recipe Dog Treats" is the most popular with a count of 30. "Organix Chicken & Brown Rice Recipe" and "Small Dog Biscuits" are the 2nd and 3rd most popular dog food care products, with counts of 28 and 26 respectively.
 
 ### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers 
 
@@ -125,7 +126,7 @@ instacart |>
 
 #### Comment on the results:
 
-* In general, customers tend to order 'Coffee Ice Cream' later in the day, especially on Tuesday, Wednesday, and Thursday. For 'Pink Lady Apples', the orders tend to be placed earlier in the day, Usually around noon.
+* In general, customers tend to order "Coffee Ice Cream" later in the day, especially on Tuesday, Wednesday, and Thursday. For 'Pink Lady Apples', the orders tend to be placed earlier in the day, Usually around noon.
 
 ## Problem 2
 
@@ -265,18 +266,17 @@ From the table, we can find that the number of people with the educational categ
 
 ```{r}
 nhanes_df |>
-  ggplot(aes(x = sex, y = age, fill = sex)) +
+  ggplot(aes(x = education, y = age, fill = sex)) +
   geom_boxplot() +
-  labs(title = "Age Distributions",
-       x = "Sex",
+  labs(title = "Age Distribution by Education and Gender",
+       x = "Education",
        y = "Age") +
-  facet_grid(.~education)
+  scale_fill_manual(values = c("male" = "lightblue", "female" = "pink"))
 ```
 
 #### Comment on these items
 
-<mark>Comment
-
+* The plot illustrates a noteworthy trend: individuals with an educational level of "more than high school" exhibit the lowest average age, while those with an education level of "less than high school" demonstrate a relatively higher average age. This observation suggests a positive trajectory in educational accessibility and attainment over the years, signifying an increasing abundance of educational resources and a growing number of individuals can receive higher education.
 
 ### Create a total activity variable for each participant
 
@@ -295,26 +295,23 @@ combine_activity_df =
   select(-starts_with("min"))
 ```
 
-#### Comment on these items
-
-<mark>Comment
-
 ### Plot these total activities (y-axis) against age (x-axis)
 
 ```{r}
 combine_activity_df |>
   ggplot(aes(x = age, y = total_activity, color = sex)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = .5) +
   geom_smooth(se = FALSE) +
   facet_grid(.~education) +
   labs(title = "Total Activity against by Age, Sex, and Education Level",
        x = "Age",
-       y = "Total Activity")
+       y = "Total Activity") +
+  scale_color_manual(values = c("male" = "blue", "female" = "red")) 
 ```
 
 #### Comment on these items
 
-<mark>Comment
+* In the group with an education level of "less than high school", individuals around the age of 20 tend to have higher total activities. For those with an education level of "high school equivalent", individuals around the age of 40 exhibit the highest total activities. Conversely, in the group with an education level of "more than high school", individuals around the age of 60 demonstrate the highest total activities. Across both the "less than high school" and "more than high school" education levels, females generally have more total activities compared to males.
 
 ### Make a three-panel plot that shows the 24-hour activity time courses
 
@@ -325,19 +322,26 @@ nhanes_df |>
     names_to = "time",
     values_to = "min_act"
   ) |>
+  mutate(time = str_remove(time, "min")) |>
+  mutate(time = as.numeric(time))|>
   ggplot(aes(x = time, y = min_act, color = sex)) +
-  geom_point(alpha = .5) +
-  geom_smooth() +
-  facet_grid(.~education) +
+  geom_point(alpha = .2) +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ education) +
+  scale_x_continuous(
+    limits = c(0, 1440),  
+    breaks = seq(0, 1440, 120)
+  ) +
   labs(
     title = "24-Hour Activity Time Courses",
     x = "time",
     y = "activity",
     caption = "Data from nhanes dataset"
-  )
+  ) +
+  scale_color_manual(values = c("male" = "green", "female" = "blue"))
 ```
 
+#### Comment on these items
 
-
-
+* From the graph, we notice that each education level exhibits a similar trend in daily activity. In comparison to the evening, people tend to be more active during the day. In general, across all three education levels, women, on average, demonstrated higher activity levels than men.
 
