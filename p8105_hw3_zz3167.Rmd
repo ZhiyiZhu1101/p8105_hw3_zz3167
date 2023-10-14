@@ -34,18 +34,8 @@ data("instacart")
 ### Write a short description of the dataset
 
 * The dataset contains `r nrow(instacart)` observations of `r length(unique(instacart$order_id))` unique users with `r ncol(instacart)` variables, which form a total of `r nrow(instacart) * ncol(instacart)` data points.
-* The key variables of the dataset contain `r names(instacart)`.
-* <mark>Describe some key variables:
-
-```{r}
-skimr::skim(instacart)
-```
-
-* <mark>Give illstrative examples of observations:
-
-```{r}
-knitr::kable(head(instacart))
-```
+* The dataset consists of information about products ordered through Instacart. Each row corresponds to a product and contains details such as the product's ID (`product_id`), the order's ID (`order_id`), the order in which the item was added to the cart (`add_to_cart_order`), whether the item has been ordered before (`reordered`), and the customer's ID (`user_id`).
+*  Each product is described by its name (`product_name`), the aisle it belongs to (`aisle`), the aisle's ID (`aisle_id`), and the department it falls under (`department`). For instance, the product's name could be something like "Bulgarian Yogurt," it belongs to the "yogurt" aisle with an aisle ID(120), and its department is "dairy eggs." Similarly, another product might be a "Organic Celery Hearts" in the "fresh vegetables" aisle with aisle ID(83), belonging to the "produce" department.
 
 ### How many aisles are there, and which aisles are the most items ordered from?
 
@@ -86,20 +76,29 @@ aisles_desc_order_df |>
   )
 ```
 
+#### Comment on the results:
+
+* The plot indicates that the largest number of items ordered comes from the "fresh vegetables" and "fresh fruits" aisles. 
+
 ### Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
 
 ```{r}
 instacart |>
   janitor::clean_names() |>
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
-  group_by(aisle, product_name) |>
-  summarise(n_products = n()) |>
-  arrange(desc(n_products)) |>
-  ungroup() |> 
-  group_by(aisle) |>
-  slice_head(n = 3)|>
-  knitr::kable(caption = "Top 3 Most Popular Items in Selected Aisles", position = "top")
+  group_by(aisle) |> 
+  count(product_name) |> 
+  mutate(rank = min_rank(desc(n))) |> 
+  filter(rank < 4) |> 
+  arrange(desc(n)) |>
+  knitr::kable()
 ```
+
+#### Comment on the results:
+
+* In the "Packaged Vegetables Fruits" aisle, "Organic Baby Spinach" is the most popular product with a count of 9784. "Organic Raspberries" and "Organic Blueberries" are the 2nd and 3rd most popular in the same aisle, with counts of 5546 and 4966 respectively.
+* In the "Baking Ingredients" aisle, "Light Brown Sugar" is the top product with a count of 499. "Pure Baking Soda" and "Cane Sugar" are the 2nd and 3rd most popular baking ingredients, with counts of 387 and 336 respectively.
+* In the "Dog Food Care" aisle, 'Snack Sticks Chicken & Rice Recipe Dog Treats' is the most popular with a count of 30. 'Organix Chicken & Brown Rice Recipe' and 'Small Dog Biscuits' are the 2nd and 3rd most popular dog food care products, with counts of 28 and 26 respectively.
 
 ### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers 
 
@@ -121,8 +120,12 @@ instacart |>
       6 ~ 'Saturday'
     )) |>
   pivot_wider(names_from = order_dow, values_from = mean_hour_of_the_day) |>
-  knitr::kable(caption = "Mean Hour of the Day for Pink Lady Apples and Coffee Ice Cream in One Week", position = "top")
+  knitr::kable(digits = 2)
 ```
+
+#### Comment on the results:
+
+* In general, customers tend to order 'Coffee Ice Cream' later in the day, especially on Tuesday, Wednesday, and Thursday. For 'Pink Lady Apples', the orders tend to be placed earlier in the day, Usually around noon.
 
 ## Problem 2
 
@@ -195,7 +198,7 @@ brfss_excellent |>
 
 #### Comment on the results:
 
-* From the spaghetti plot we can see that the mean value varies between `r min(brfss_excellent$mean_data_value)` and `r max(brfss_excellent$mean_data_value)`, and the average values for different states fluctuated around a particular value over time.
+* From the spaghetti plot we can see that the mean value varies between `r min(brfss_excellent$mean_data_value)` and `r max(brfss_excellent$mean_data_value)`. For some states, the fluctuation is considerable.
 
 #### Make a two-panel plot 
 
@@ -203,8 +206,8 @@ brfss_excellent |>
 brfss_new_df |>
   filter(year %in% c(2006,2010),state == "NY") |>
   ggplot(aes(x = response, y = data_value)) +
-  geom_boxplot(aes(fill = response)) +
-  facet_wrap(~ year) +
+  geom_boxplot() +
+  facet_wrap(.~ year) +
   labs(title = "Distribution of Data Value by Response in NY State for 2006 and 2010",
        x = "Response",
        y = "Data Value")
