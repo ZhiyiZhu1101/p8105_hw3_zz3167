@@ -34,9 +34,10 @@ data("instacart")
 
 ### Write a short description of the dataset
 
-* The dataset contains `r nrow(instacart)` observations of `r length(unique(instacart$order_id))` unique users with `r ncol(instacart)` variables, which form a total of `r nrow(instacart) * ncol(instacart)` data points.
+* This dataset contains `r nrow(instacart)` rows and `r ncol(instacart)` columns, with each row resprenting a single product from an instacart order, which form a total of `r nrow(instacart) * ncol(instacart)` data points.
 * The dataset consists of information about products ordered through Instacart. Each row corresponds to a product and contains details such as the product's ID (`product_id`), the order's ID (`order_id`), the order in which the item was added to the cart (`add_to_cart_order`), whether the item has been ordered before (`reordered`), and the customer's ID (`user_id`).
 *  Each product is described by its name (`product_name`), the aisle it belongs to (`aisle`), the aisle's ID (`aisle_id`), and the department it falls under (`department`). For instance, the product's name could be something like "Bulgarian Yogurt," it belongs to the "yogurt" aisle with an aisle ID(120), and its department is "dairy eggs." Similarly, another product might be a "Organic Celery Hearts" in the "fresh vegetables" aisle with aisle ID(83), belonging to the "produce" department.
+* In total, there are `r instacart |> select(product_id) |> distinct() |> count()` products found in `r instacart |> select(user_id, order_id) |> distinct() |> count()` orders from `r instacart |> select(user_id) |> distinct() |> count()` distinct users.
 
 ### How many aisles are there, and which aisles are the most items ordered from?
 
@@ -107,7 +108,7 @@ instacart |>
 instacart |>
   janitor::clean_names() |>
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
-  group_by(order_dow, product_name) |>
+  group_by(product_name, order_dow) |>
   summarise(mean_hour_of_the_day = mean(order_hour_of_day)) |>
   mutate(
     order_dow = case_match(
@@ -126,7 +127,7 @@ instacart |>
 
 #### Comment on the results:
 
-* In general, customers tend to order "Coffee Ice Cream" later in the day, especially on Tuesday, Wednesday, and Thursday. For 'Pink Lady Apples', the orders tend to be placed earlier in the day, Usually around noon.
+* This table has been formatted in an untidy manner for human readers. Pink Lady Apples are generally purchased slightly earlier in the day than Coffee Ice Cream, with the exception of Friday.
 
 ## Problem 2
 
@@ -144,10 +145,9 @@ brfss_new_df =
   brfss_smart2010 |>
   janitor::clean_names() |>
   rename(state = locationabbr, location = locationdesc) |>
-  filter(
-    topic == "Overall Health",
-    response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) |>
-  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), order = TRUE))
+  filter(topic == "Overall Health") |>
+  filter(response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) |>
+  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), ordered = TRUE))
 ```
 
 ### Answer the following questions and comment on the results.
@@ -191,7 +191,7 @@ brfss_excellent |>
   ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
   geom_line() +
   labs(
-    title ="Excellent Responses Variation Across Different States",
+    title ="Average Data Value for Excellent Response over Time by State",
     x = "Year",
     y = "Average Value") +
   theme_bw()
@@ -199,7 +199,7 @@ brfss_excellent |>
 
 #### Comment on the results:
 
-* From the spaghetti plot we can see that the mean value varies between `r min(brfss_excellent$mean_data_value)` and `r max(brfss_excellent$mean_data_value)`. For some states, the fluctuation is considerable.
+* We can observe that, in different states, the average data values for excellent response vary across different years, but it's hard to identify the tendency. For some states, the fluctuation is considerable.
 
 #### Make a two-panel plot 
 
@@ -233,12 +233,12 @@ nhanes_covar =
   janitor::clean_names()
 
 nhanes_df = 
-  full_join(nhanes_covar, nhanes_accel, by = "seqn") |>
+  inner_join(nhanes_covar, nhanes_accel, by = "seqn") |>
   filter(age >= 21) |>
   drop_na(sex, age, bmi, education) |>
   mutate(sex = case_match(sex, 1 ~ "male", 2 ~ "female"),
-         sex = factor(sex, levels = c("male", "female"), ordered = TRUE),
-         education = case_match(education,
+         sex = factor(sex, levels = c("male", "female"), ordered = TRUE)) |>
+  mutate(education = case_match(education,
                                 1 ~ "Less than high school",
                                 2 ~ "High school equivalent",
                                 3 ~ "More than high school"),
@@ -260,7 +260,7 @@ nhanes_df |>
 
 #### Comment on these items
 
-From the table, we can find that the number of people with the educational category of "More than high school" is the largest and the number of people with the educational category of "Less than high school" is the least. Across all education categories, men outnumbered women at "High school equivalent" and "More than high school" categories. At "Less than high school" category, women outnumber men slightly. 
+From the table, we can find that the number of people with the educational category of "More than high school" is the largest and the number of people with the educational category of "Less than high school" is the least. Across all education categories, men outnumbered women at "High school equivalent" category. At "Less than high school" and "More than high school" categories, women outnumbered men. 
 
 ### Create a visualization of the age distributions
 
@@ -277,6 +277,8 @@ nhanes_df |>
 #### Comment on these items
 
 * The plot illustrates a noteworthy trend: individuals with an educational level of "more than high school" exhibit the lowest average age, while those with an education level of "less than high school" demonstrate a relatively higher average age. This observation suggests a positive trajectory in educational accessibility and attainment over the years, signifying an increasing abundance of educational resources and a growing number of individuals can receive higher education.
+* In the "high school equivalent" education category, female participants tend to be older than their male counterparts, whereas in the other two categories, the age distributions are similar between genders.
+
 
 ### Create a total activity variable for each participant
 
@@ -291,7 +293,7 @@ total_activity_df =
   summarize(total_activity=sum(min_act)) 
 
 combine_activity_df = 
-  full_join(nhanes_df, total_activity_df, by ="seqn") |>
+  inner_join(nhanes_df, total_activity_df, by ="seqn") |>
   select(-starts_with("min"))
 ```
 
@@ -303,7 +305,7 @@ combine_activity_df |>
   geom_point(alpha = .5) +
   geom_smooth(se = FALSE) +
   facet_grid(.~education) +
-  labs(title = "Total Activity against by Age, Sex, and Education Level",
+  labs(title = "Total Activity against Age by Education Level",
        x = "Age",
        y = "Total Activity") +
   scale_color_manual(values = c("male" = "blue", "female" = "red")) 
@@ -311,7 +313,8 @@ combine_activity_df |>
 
 #### Comment on these items
 
-* In the group with an education level of "less than high school", individuals around the age of 20 tend to have higher total activities. For those with an education level of "high school equivalent", individuals around the age of 40 exhibit the highest total activities. Conversely, in the group with an education level of "more than high school", individuals around the age of 60 demonstrate the highest total activities. Across both the "less than high school" and "more than high school" education levels, females generally have more total activities compared to males.
+* In the group with an education level of "less than high school", individuals around the age of 20 tend to have higher total activities. For those with an education level of "high school equivalent", individuals around the age of 40 exhibit the highest total activities. Conversely, in the group with an education level of "more than high school", individuals between the ages of 20 and 50 have about the similar total activities. 
+* Across both the "high school equivalent" and "more than high school" education levels, females generally have more total activities compared to males.
 
 ### Make a three-panel plot that shows the 24-hour activity time courses
 
@@ -334,8 +337,8 @@ nhanes_df |>
   ) +
   labs(
     title = "24-Hour Activity Time Courses",
-    x = "time",
-    y = "activity",
+    x = "Time",
+    y = "Activity",
     caption = "Data from nhanes dataset"
   ) +
   scale_color_manual(values = c("male" = "green", "female" = "blue"))
@@ -343,5 +346,6 @@ nhanes_df |>
 
 #### Comment on these items
 
-* From the graph, we notice that each education level exhibits a similar trend in daily activity. In comparison to the evening, people tend to be more active during the day. In general, across all three education levels, women, on average, demonstrated higher activity levels than men.
+* From the graph, we notice that each education level exhibits a similar trend in daily activity. In comparison to the evening, people tend to be more active during the day. 
+* In general, across all three education levels, women, on average, demonstrated higher activity levels than men.
 
